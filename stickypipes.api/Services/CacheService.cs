@@ -9,19 +9,19 @@ namespace stickypipes.api.Services
     {
         private readonly SemaphoreSlim _updateValueLock = new SemaphoreSlim(1, 1);
 
-        private readonly ConcurrentDictionary<Guid, Session> _sessions = new ConcurrentDictionary<Guid, Session>();
-        private readonly ConcurrentDictionary<Guid, Subject<Session>> _subjects = new ConcurrentDictionary<Guid, Subject<Session>>();
+        private readonly ConcurrentDictionary<string, Session> _sessions = new ConcurrentDictionary<string, Session>();
+        private readonly ConcurrentDictionary<string, Subject<Session>> _subjects = new ConcurrentDictionary<string, Subject<Session>>();
 
         private readonly TimeSpan _updateInterval = TimeSpan.FromSeconds(1);
 
         private Timer _timer;
         private volatile bool _updatingValues;
 
-        public void Create(Guid sessionId, string user)
+        public void Create(string id, string user)
         {
             var session = new Session() { Id = Guid.NewGuid(), User = user };
-            _sessions.TryAdd(sessionId, session);
-            _subjects.TryAdd(sessionId, new Subject<Session>());
+            _sessions.TryAdd(id, session);
+            _subjects.TryAdd(id, new Subject<Session>());
 
             if (_timer == null)
             {
@@ -29,7 +29,7 @@ namespace stickypipes.api.Services
             }
         }
 
-        public bool TryGet(Guid id, out string username)
+        public bool TryGet(string id, out string username)
         {
             username = "";
             if (!_sessions.TryGetValue(id, out Session session))
@@ -40,7 +40,7 @@ namespace stickypipes.api.Services
             return true;
         }
 
-        public IObservable<Session> StreamValues(Guid id)
+        public IObservable<Session> StreamValues(string id)
         {
             return _subjects[id];
         }

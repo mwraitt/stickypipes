@@ -9,40 +9,34 @@ namespace stickypipes.api.Hubs
     public class StickyHub : Hub
     {
         private readonly CacheService _cache;
-        private readonly Guid _sessionId;
 
         public StickyHub(CacheService cache)
         {
             _cache = cache;
-            _sessionId = Guid.NewGuid();
         }
 
         public async Task Register(string username)
         {
-            _cache.Create(_sessionId, username);
 
-            string message = $"{username} : {_sessionId}";
-            await Clients.Caller.SendAsync("registered", message, _sessionId);
+            _cache.Create(Context.ConnectionId, username);
+
+            string message = $"{username} : {Context.ConnectionId}";
+            await Clients.Caller.SendAsync("registered", message, Context.ConnectionId);
         }
 
         public async Task WhoAmI()
         {
-            await WhoIsThis(_sessionId);
-        }
-
-        public async Task WhoIsThis(Guid sessionId)
-        {
-            if (!_cache.TryGet(sessionId, out string username))
+            if (!_cache.TryGet(Context.ConnectionId, out string username))
             {
-                username = $"unable to find anyone matching {sessionId}";
+                username = $"unable to find anyone matching {Context.ConnectionId}";
             }
 
             await Clients.All.SendAsync("thisisyou", username);
         }
 
-        public ChannelReader<Session> StreamValues(Guid sessionId)
+        public ChannelReader<Session> StreamValues()
         {
-            return _cache.StreamValues(sessionId).AsChannelReader(10);
+            return _cache.StreamValues(Context.ConnectionId).AsChannelReader(10);
         }
     }
 }
