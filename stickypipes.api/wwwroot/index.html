@@ -15,11 +15,9 @@
     <div class="container">
 
         <input type="button" id="register" value="register" />
-        <input type="button" id="server-cache" value="server cache" />
-        <input type="button" id="client-cache" value="client cache"/>
-        <div id="user-cache"></div>
-        <ul id="events"></ul>
-        <ul id="values-stream"></ul>
+        <input type="button" id="connection-id" value="whoami" />
+        <div id="events"></div>
+        <div id="values"></div>
     </div>
     <!--Script references. -->
     <!--Reference the SignalR library. -->
@@ -28,7 +26,7 @@
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function () {
             // Get the user name and store it to prepend to messages.
-            var name = prompt('Enter your name:', '');
+			var name = prompt('Enter your name:', '');
 
             // Start the connection.
             var connection = new signalR.HubConnectionBuilder()
@@ -38,19 +36,15 @@
             // Create a function that the hub can call to broadcast messages.
             connection.on('registered', function (name, id) {
                 // Html encode display name and message.
-				var encodedName = name;
                 // Add the message to the page.
-                var liElement = document.createElement('li');
-                liElement.innerHTML = 'Caching id for <strong>' + encodedName + '</strong>';
-				document.getElementById('events').appendChild(liElement);
-				document.getElementById('user-cache').innerText = id;
+                var event = 'Caching id for <strong>' + name + '</strong>';
+				document.getElementById('events').innerHTML = event;
 
-                connection.stream("StreamValues", id).subscribe({
+                connection.stream("StreamValues").subscribe({
 					close: false,
 					next: function (value) {
-						var liElement = document.createElement('li');
-						liElement.innerHTML = 'Got value <strong>' + value.value + '</strong> for ' + value.user;
-						document.getElementById('values-stream').appendChild(liElement);
+						var message = 'Got value <strong>' + value.value + '</strong> for ' + value.user;
+						document.getElementById('values').innerHTML = message;
 					},
 					error: function (err) {
 						console.log(err);
@@ -61,9 +55,8 @@
             connection.on('thisisyou', function (name) {
                 var encodedName = name;
                 // Add the message to the page.
-                var liElement = document.createElement('li');
-                liElement.innerHTML = 'Responsing with cached data for <strong>' + encodedName + '</strong>';
-                document.getElementById('events').appendChild(liElement);
+                var message = 'Responsing with cached data for <strong>' + encodedName + '</strong>';
+                document.getElementById('events').innerHTML = message;
             });
 
             // Transport fallback functionality is now built into start.
@@ -76,14 +69,8 @@
 						event.preventDefault();
 					});
 
-					document.getElementById('server-cache').addEventListener('click', function (event) {
-						connection.invoke('whoami');
-						event.preventDefault();
-					});
-
-					document.getElementById('client-cache').addEventListener('click', function (event) {
-						var id = document.getElementById('user-cache').innerText;
-						connection.invoke('whoisthis', id)
+					document.getElementById('connection-id').addEventListener('click', function (event) {
+						connection.invoke('whoami')
 						event.preventDefault();
 					})
             })
