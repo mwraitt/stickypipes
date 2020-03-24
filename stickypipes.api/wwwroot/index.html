@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>stickypipes.api</title>
+    <style type="text/css">
+        .container {
+            background-color: #99CCFF;
+            border: thick solid #808080;
+            padding: 20px;
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <input type="button" id="register" value="register" />
+        <input type="button" id="server-cache" value="server cache" />
+        <input type="button" id="client-cache" value="client cache"/>
+        <div id="user-cache"></div>
+        <ul id="events"></ul>
+    </div>
+    <!--Script references. -->
+    <!--Reference the SignalR library. -->
+    <script type="text/javascript" src="libs/signalr.min.js"></script>
+    <!--Add script to update the page and send messages.-->
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get the user name and store it to prepend to messages.
+            var name = prompt('Enter your name:', '');
+
+            // Start the connection.
+            var connection = new signalR.HubConnectionBuilder()
+                                .withUrl('/api/hubs/sticky')
+                                .build();
+
+            // Create a function that the hub can call to broadcast messages.
+            connection.on('registered', function (name, id) {
+                // Html encode display name and message.
+				var encodedName = name;
+                // Add the message to the page.
+                var liElement = document.createElement('li');
+                liElement.innerHTML = 'Caching id for <strong>' + encodedName + '</strong>';
+				document.getElementById('events').appendChild(liElement);
+				document.getElementById('user-cache').innerText = id;
+            });
+
+            connection.on('thisisyou', function (name) {
+                var encodedName = name;
+                // Add the message to the page.
+                var liElement = document.createElement('li');
+                liElement.innerHTML = 'Responsing with cached data for <strong>' + encodedName + '</strong>';
+                document.getElementById('events').appendChild(liElement);
+            });
+
+            // Transport fallback functionality is now built into start.
+            connection.start()
+				.then(function () {
+					console.log('connection started');
+					document.getElementById('register').addEventListener('click', function (event) {
+						// Call the Send method on the hub.
+						connection.invoke('register', name);
+						event.preventDefault();
+					});
+
+					document.getElementById('server-cache').addEventListener('click', function (event) {
+						connection.invoke('whoami');
+						event.preventDefault();
+					});
+
+					document.getElementById('client-cache').addEventListener('click', function (event) {
+						var id = document.getElementById('user-cache').innerText;
+						connection.invoke('whoisthis', id)
+						event.preventDefault();
+					})
+            })
+            .catch(error => {
+                console.error(error.message);
+            });
+        });
+    </script>
+</body>
+</html>
