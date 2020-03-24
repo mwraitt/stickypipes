@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using stickypipes.api.Services;
@@ -29,14 +30,19 @@ namespace stickypipes.api.Hubs
             await WhoIsThis(_sessionId);
         }
 
-        public async Task WhoIsThis(Guid id)
+        public async Task WhoIsThis(Guid sessionId)
         {
-            if (!_cache.TryGet(id, out string username))
+            if (!_cache.TryGet(sessionId, out string username))
             {
-                username = $"unable to find anyone matching {id}";
+                username = $"unable to find anyone matching {sessionId}";
             }
 
             await Clients.All.SendAsync("thisisyou", username);
+        }
+
+        public ChannelReader<Session> StreamValues(Guid sessionId)
+        {
+            return _cache.StreamValues(sessionId).AsChannelReader(10);
         }
     }
 }

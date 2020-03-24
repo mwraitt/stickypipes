@@ -19,6 +19,7 @@
         <input type="button" id="client-cache" value="client cache"/>
         <div id="user-cache"></div>
         <ul id="events"></ul>
+        <ul id="values-stream"></ul>
     </div>
     <!--Script references. -->
     <!--Reference the SignalR library. -->
@@ -43,6 +44,18 @@
                 liElement.innerHTML = 'Caching id for <strong>' + encodedName + '</strong>';
 				document.getElementById('events').appendChild(liElement);
 				document.getElementById('user-cache').innerText = id;
+
+                connection.stream("StreamValues", id).subscribe({
+					close: false,
+					next: function (value) {
+						var liElement = document.createElement('li');
+						liElement.innerHTML = 'Got value <strong>' + value.value + '</strong> for ' + value.user;
+						document.getElementById('values-stream').appendChild(liElement);
+					},
+					error: function (err) {
+						console.log(err);
+					}
+				});
             });
 
             connection.on('thisisyou', function (name) {
